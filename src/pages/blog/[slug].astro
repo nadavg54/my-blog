@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { Markdown } from '@astrojs/markdown-remark';
+import fs from 'fs';
+import path from 'path';
+
+const slug = Astro.params.slug;
+const file = fs.readFileSync(path.resolve('./src/content/blog', `${slug}.md`), 'utf-8');
+---
+
+<BaseLayout>
+  <article class="prose">
+    <Markdown content={file} />
+  </article>
+</BaseLayout>

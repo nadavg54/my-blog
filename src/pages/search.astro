@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+  <h1>Search Blogs</h1>
+  <input type="text" id="searchInput" placeholder="Type your query" style="width:100%; padding:0.5rem; margin-bottom:1rem;">
+  <div id="results"></div>
+
+  <script type="module">
+    const input = document.getElementById('searchInput');
+    const results = document.getElementById('results');
+
+    input.addEventListener('input', async () => {
+      const query = input.value.trim();
+      if (!query) {
+        results.innerHTML = '';
+        return;
+      }
+      const res = await fetch(`https://api.yourdomain.com/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      results.innerHTML = data.map(item => `
+        <div class="search-result">
+          <a class="search-result-title" href="${item.url}" target="_blank" rel="noopener">${item.title}</a>
+          <p class="search-result-meta">${item.site}</p>
+          <p class="search-result-snippet">${item.snippet}</p>
+        </div>
+      `).join('');
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,10 @@
+---
+const { title, url, site, snippet } = Astro.props;
+---
+
+<div class="search-result">
+  <a class="search-result-title" href={url} target="_blank" rel="noopener">{title}</a>
+  <p class="search-result-meta">{site}</p>
+  <p class="search-result-snippet">{snippet}</p>
+</div>
+
