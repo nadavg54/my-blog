@@ -1,15 +1,26 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { Markdown } from '@astrojs/markdown-remark';
-import fs from 'fs';
-import path from 'path';
+import { getCollection, getEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 
-const slug = Astro.params.slug;
-const file = fs.readFileSync(path.resolve('./src/content/blog', `${slug}.md`), 'utf-8');
+// Define all possible paths/slugs at build time
+export async function getStaticPaths() {
+  const blogEntries = await getCollection('blog');
+  return blogEntries.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+// Extract the content entry from props
+const { entry } = Astro.props as { entry: CollectionEntry<'blog'> };
+const { Content } = await entry.render();
+
+// Get frontmatter data
+const { title } = entry.data;
 ---
 
 <BaseLayout>
-  <article class="prose">
-    <Markdown content={file} />
-  </article>
+  <h1>{title}</h1>
+  <Content />
 </BaseLayout>
