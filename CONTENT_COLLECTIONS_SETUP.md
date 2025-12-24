@@ -41,3 +41,4 @@ paths.forEach(page => {
     const finalHTML = renderLayout(BaseLayout, { Content });
     fs.writeFileSync(`./dist/blog/${page.params.slug}/index.html`, finalHTML);
 });
+
