@@ -1,57 +1,50 @@
 ---
-import { useState } from 'react';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout>
   <h1>Search Blogs</h1>
 
-  <input
-    type="text"
-    id="searchInput"
-    placeholder="Enter keyword..."
-    style="padding: 0.5em; width: 300px;"
-  />
-  <button id="searchBtn" style="margin-left: 0.5em; padding: 0.5em;">Search</button>
+  <form id="search-form">
+    <input type="text" name="title" placeholder="Search by title" />
+    <input type="text" name="text" placeholder="Search by text" />
+    <input type="text" name="url" placeholder="Filter by URL" />
+    <button type="submit">Search</button>
+  </form>
 
-  <ul id="results" style="margin-top: 1em;"></ul>
+  <ul id="results"></ul>
 
   <script type="module">
-    const input = document.getElementById('searchInput');
-    const btn = document.getElementById('searchBtn');
-    const results = document.getElementById('results');
+    const form = document.getElementById('search-form');
+    const resultsList = document.getElementById('results');
 
-    async function search() {
-      const query = input.value.trim();
-      if (!query) {
-        results.innerHTML = '<li>Please enter a keyword.</li>';
-        return;
-      }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const formData = new FormData(form);
+      const title = formData.get('title') || '';
+      const text = formData.get('text') || '';
+      const url = formData.get('url') || '';
+
+      const params = new URLSearchParams();
+      if (title) params.append('title', title);
+      if (text) params.append('text', text);
+      if (url) params.append('url', url);
+
+      const res = await fetch(`/api/search?${params.toString()}`);
       const data = await res.json();
 
-      if (!data.ok) {
-        results.innerHTML = '<li>Error: ' + data.error + '</li>';
-        return;
+      resultsList.innerHTML = '';
+
+      if (data.ok) {
+        data.results.forEach(item => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
+          resultsList.appendChild(li);
+        });
+      } else {
+        resultsList.innerHTML = `<li>Error: ${data.error}</li>`;
       }
-
-      if (data.data.length === 0) {
-        results.innerHTML = '<li>No results found.</li>';
-        return;
-      }
-
-      results.innerHTML = data.data
-        .map(
-          (post) =>
-            `<li><a href="${post.url}">${post.title}</a></li>`
-        )
-        .join('');
-    }
-
-    btn.addEventListener('click', search);
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') search();
     });
   </script>
 </BaseLayout>

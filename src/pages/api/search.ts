@@ -7,25 +7,41 @@ const supabase = createClient(
 );
 
 export async function GET(request: Request) {
-  // Parse the URL properly
-  const url = new URL(request.url);
-  const query = url.searchParams.get('q');
+  const urlObj = new URL(request.url);
 
-  console.log('FULL URL:', request.url);
-  console.log('QUERY STRING:', query);
+  const titleQuery = urlObj.searchParams.get('title') || '';
+  const textQuery = urlObj.searchParams.get('text') || '';
+  const urlQuery = urlObj.searchParams.get('url') || '';
 
-  if (!query) {
+  console.log('TITLE:', titleQuery);
+  console.log('TEXT:', textQuery);
+  console.log('URL:', urlQuery);
+
+  if (!titleQuery && !textQuery && !urlQuery) {
     return new Response(
-      JSON.stringify({ ok: false, error: 'Missing query parameter "q"' }),
+      JSON.stringify({
+        ok: false,
+        error: 'Missing query parameter: title, text, or url',
+      }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
-  const { data, error } = await supabase
-    .from('article')
-    .select('title, url')
-    .ilike('title', `%${query}%`)
-    .or(`text.ilike.%${query}%`);
+  let query = supabase.from('article').select('title, url');
+
+  if (titleQuery) {
+    query = query.ilike('title', `%${titleQuery}%`);
+  }
+
+  if (textQuery) {
+    query = query.ilike('text', `%${textQuery}%`);
+  }
+
+  if (urlQuery) {
+    query = query.ilike('url', `%${urlQuery}%`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return new Response(
@@ -34,8 +50,8 @@ export async function GET(request: Request) {
     );
   }
 
-  return new Response(JSON.stringify({ ok: true, data }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({ ok: true, results: data }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
 }
