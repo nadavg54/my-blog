@@ -7,9 +7,9 @@
         "preview": "astro preview"
     },
     "dependencies": {
-        "@astrojs/node": "^6.1.0",
+        "@astrojs/vercel": "^9.0.2",
         "@supabase/supabase-js": "^2.89.0",
-        "astro": "^3.6.0",
+        "astro": "^5.16.6",
         "dotenv": "^17.2.3"
     },
     "devDependencies": {
