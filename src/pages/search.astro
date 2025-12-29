@@ -172,6 +172,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       color: var(--text-main);
     }
 
+    .company-dropdown {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      overflow: hidden;
+    }
+    .company-dropdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .company-dropdown-header:hover {
+      background: #f8fafc;
+    }
+    .company-dropdown-header span {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+    .company-dropdown-content {
+      display: none;
+      padding: 0.5rem;
+      border-top: 1px solid var(--border);
+      background: #fafbfc;
+    }
+    .company-dropdown-content.open {
+      display: block;
+    }
+    .company-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      padding: 0.25rem 0;
+    }
+    .company-checkbox input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
     #results { list-style: none; padding: 0; margin-top: 1.25rem; }
     #results li { padding: 0.75rem; border-bottom: 1px solid var(--border); }
   </style>
@@ -191,6 +236,69 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div>
           <label for="url-filter" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-main);">Filter by URL</label>
           <input type="text" id="url-filter" class="ghost-input" placeholder="Enter URL..." style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-main);">Filter by Company</label>
+          <div class="company-dropdown">
+            <div class="company-dropdown-header" id="company-dropdown-header">
+              <span id="company-selected-text">Select companies...</span>
+              <span>▼</span>
+            </div>
+            <div class="company-dropdown-content" id="company-dropdown-content">
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="amazon">
+                <span>Amazon</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="cloudflare">
+                <span>Cloudflare</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="cncf">
+                <span>CNCF</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="confluent">
+                <span>Confluent</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="datadoghq">
+                <span>Datadog</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="doordash">
+                <span>DoorDash</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="dropbox">
+                <span>Dropbox</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="fb">
+                <span>Facebook</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="figma">
+                <span>Figma</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="github">
+                <span>GitHub</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="google">
+                <span>Google</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="netflix">
+                <span>Netflix</span>
+              </label>
+              <label class="company-checkbox">
+                <input type="checkbox" name="company" value="uber">
+                <span>Uber</span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -232,6 +340,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </div>
 
   <script is:inline>
+    // Company dropdown functionality
+    const companyDropdownHeader = document.getElementById('company-dropdown-header');
+    const companyDropdownContent = document.getElementById('company-dropdown-content');
+    const companySelectedText = document.getElementById('company-selected-text');
+    
+    companyDropdownHeader.addEventListener('click', function() {
+      companyDropdownContent.classList.toggle('open');
+      const arrow = companyDropdownHeader.querySelector('span:last-child');
+      arrow.textContent = companyDropdownContent.classList.contains('open') ? '▲' : '▼';
+    });
+
+    // Update selected text when checkboxes change
+    document.querySelectorAll('input[name="company"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const selected = Array.from(document.querySelectorAll('input[name="company"]:checked')).map(cb => cb.value);
+        if (selected.length === 0) {
+          companySelectedText.textContent = 'Select companies...';
+        } else {
+          companySelectedText.textContent = selected.length + ' selected';
+        }
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.company-dropdown')) {
+        companyDropdownContent.classList.remove('open');
+        const arrow = companyDropdownHeader.querySelector('span:last-child');
+        arrow.textContent = '▼';
+      }
+    });
+
     // Modal functionality
     const modal = document.getElementById('text-search-modal');
     const openBtn = document.getElementById('open-text-search-btn');
@@ -326,6 +466,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const urlFilter = document.getElementById('url-filter').value.trim();
       if (titleFilter) params.append('title', titleFilter);
       if (urlFilter) params.append('url', urlFilter);
+
+      // Add company filters
+      const companyCheckboxes = document.querySelectorAll('input[name="company"]:checked');
+      companyCheckboxes.forEach(checkbox => {
+        params.append('company', checkbox.value);
+      });
 
       const res = await fetch('/api/search?' + params.toString());
       const data = await res.json();

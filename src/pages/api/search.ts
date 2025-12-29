@@ -14,9 +14,10 @@ export async function GET(request: Request) {
   const excludes = urlObj.searchParams.getAll('exclude');
   const titleFilter = urlObj.searchParams.get('title');
   const urlFilter = urlObj.searchParams.get('url');
+  const companies = urlObj.searchParams.getAll('company');
 
   // Safety check: if no query, return empty results
-  if (orGroups.length === 0 && excludes.length === 0 && !titleFilter && !urlFilter) {
+  if (orGroups.length === 0 && excludes.length === 0 && !titleFilter && !urlFilter && companies.length === 0) {
     return new Response(JSON.stringify({ ok: true, results: [] }), { 
       status: 200, 
       headers: { 'Content-Type': 'application/json' } 
@@ -53,6 +54,12 @@ export async function GET(request: Request) {
   // 4. Apply URL Filter (AND condition)
   if (urlFilter) {
     query = query.ilike('url', `%${urlFilter}%`);
+  }
+
+  // 5. Apply Company Filters (OR condition - URL contains any selected company)
+  if (companies.length > 0) {
+    const companyFilters = companies.map(company => `url.ilike.*${company}*`).join(',');
+    query = query.or(companyFilters);
   }
 
   const { data, error } = await query;
