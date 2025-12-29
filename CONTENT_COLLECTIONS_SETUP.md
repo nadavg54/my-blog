@@ -42,3 +42,5 @@ paths.forEach(page => {
     fs.writeFileSync(`./dist/blog/${page.params.slug}/index.html`, finalHTML);
 });
 
+
+
