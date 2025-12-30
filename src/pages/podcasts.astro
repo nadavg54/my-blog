@@ -1,0 +1,344 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { PODCAST_DOMAINS, PODCAST_NAMES } from './api/podcasts';
+
+// Get podcast keys in a consistent order
+const podcastKeys = Object.keys(PODCAST_DOMAINS).sort();
+---
+
+<BaseLayout>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --danger: #ef4444;
+    }
+
+    .search-wrapper {
+      max-width: 650px;
+      margin: 1.25rem auto;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+    }
+
+    .section-title { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em; color: var(--text-muted); margin-bottom: 0.5rem; display: block; }
+
+    .card { 
+      background: var(--card); 
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      padding: 0.75rem; 
+      margin-bottom: 0.75rem; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+    }
+    
+    :global(.or-block.card) { 
+      background: var(--card); 
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      padding: 0.75rem; 
+      margin-bottom: 0.75rem; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+    }
+    
+    :global(.group-header) { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.625rem; }
+    :global(.group-label) { font-size: 0.95rem; font-weight: 500; }
+
+    :global(.chip-list) { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    
+    :global(.chip) { 
+      display: inline-flex !important; 
+      align-items: center; 
+      gap: 0.375rem; 
+      background: #f1f5f9; 
+      border: 1px solid var(--border); 
+      padding: 0.25rem 0.5rem; 
+      border-radius: 6px; 
+      font-size: 0.875rem; 
+    }
+    
+    :global(.chip > span:first-child) {
+      margin-right: 0.375rem;
+    }
+
+    :global(.chip.exclude) { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+    :global(.remove-btn) { 
+      border: 1px solid #cbd5e0; 
+      background: white; 
+      cursor: pointer; 
+      padding: 0; 
+      font-size: 0.7rem; 
+      width: 16px; 
+      height: 16px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 3px;
+      margin-left: 0;
+      flex-shrink: 0;
+    }
+    :global(.remove-btn:hover) { background: var(--danger); color: white; border-color: var(--danger); }
+
+    :global(.ghost-input) { border: 1px solid var(--border); border-radius: 6px; outline: none; padding: 0.35rem 0.5rem; font-size: 0.875rem; min-width: 120px; }
+    :global(.ghost-input:focus) { border-color: var(--primary); }
+    :global(.add-word-input) { border: 1px solid var(--border); border-radius: 6px; outline: none; padding: 0.35rem 0.5rem; font-size: 0.875rem; min-width: 120px; }
+    
+    .btn-add-group { 
+      width: 100%; border: 2px dashed var(--border); background: transparent; 
+      padding: 0.5rem; border-radius: 8px; color: var(--text-muted); 
+      cursor: pointer; margin-bottom: 1.25rem; transition: all 0.2s;
+    }
+    .btn-add-group:hover { background: #f1f5f9; border-color: var(--text-muted); }
+
+    .btn-run { 
+      width: 100%; background: var(--primary); color: white; border: none; 
+      padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;
+    }
+    
+    .delete-group-text { color: var(--danger); font-size: 0.85rem; cursor: pointer; background: none; border: none; font-weight: 500; }
+
+    .podcast-dropdown {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      overflow: hidden;
+    }
+    .podcast-dropdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .podcast-dropdown-header:hover {
+      background: #f8fafc;
+    }
+    .podcast-dropdown-header span {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+    .podcast-dropdown-content {
+      display: none;
+      padding: 0.5rem;
+      border-top: 1px solid var(--border);
+      background: #fafbfc;
+    }
+    .podcast-dropdown-content.open {
+      display: block;
+    }
+    .podcast-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      padding: 0.25rem 0;
+    }
+    .podcast-checkbox input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    #results { list-style: none; padding: 0; margin-top: 1.25rem; }
+    #results li { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+  </style>
+
+  <div class="search-wrapper">
+    <h1 style="margin-bottom: 1.25rem;">Podcast Search</h1>
+
+    <span class="section-title">Filters</span>
+    <div class="card">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div>
+          <label for="title-filter" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-main);">Filter by Title</label>
+          <input type="text" id="title-filter" class="ghost-input" placeholder="Enter title..." style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-main);">Filter by Podcast</label>
+          <div class="podcast-dropdown">
+            <div class="podcast-dropdown-header" id="podcast-dropdown-header">
+              <span id="podcast-selected-text">All podcasts selected</span>
+              <span>▼</span>
+            </div>
+            <div class="podcast-dropdown-content" id="podcast-dropdown-content">
+              {podcastKeys.map((key) => (
+                <label class="podcast-checkbox">
+                  <input type="checkbox" name="podcast" value={key} checked />
+                  <span>{PODCAST_NAMES[key] || key}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <span class="section-title">Text Search</span>
+    <span class="section-title">Inclusion Groups (OR)</span>
+    <div id="or-groups-container">
+      <div class="or-block card">
+        <div class="group-header">
+          <span class="group-label">Match all in this group</span>
+          <button class="delete-group-text remove-group-btn">Delete Group</button>
+        </div>
+        <div class="chip-list">
+          <input type="text" class="ghost-input add-word-input" placeholder="+ Type and Enter...">
+        </div>
+      </div>
+    </div>
+
+    <button id="add-group-btn" class="btn-add-group">+ Add New Alternative Group</button>
+
+    <span class="section-title">Exclusions</span>
+    <div class="card" style="border-color: #fecaca; background: #fffafb;">
+      <div class="chip-list" id="exclude-container">
+        <input type="text" id="add-exclude-input" class="ghost-input" placeholder="+ Words to avoid...">
+      </div>
+    </div>
+
+    <button id="submit-search" class="btn-run">Run Search Query</button>
+    <ul id="results"></ul>
+  </div>
+
+  <script is:inline>
+    // Podcast dropdown functionality
+    const podcastDropdownHeader = document.getElementById('podcast-dropdown-header');
+    const podcastDropdownContent = document.getElementById('podcast-dropdown-content');
+    const podcastSelectedText = document.getElementById('podcast-selected-text');
+    const podcastCheckboxes = document.querySelectorAll('input[name="podcast"]');
+    
+    podcastDropdownHeader.addEventListener('click', function() {
+      podcastDropdownContent.classList.toggle('open');
+      const arrow = podcastDropdownHeader.querySelector('span:last-child');
+      arrow.textContent = podcastDropdownContent.classList.contains('open') ? '▲' : '▼';
+    });
+
+    // Update selected text and prevent unchecking all
+    function updatePodcastSelection() {
+      const selected = Array.from(document.querySelectorAll('input[name="podcast"]:checked')).map(cb => cb.value);
+      const total = podcastCheckboxes.length;
+      
+      if (selected.length === 0) {
+        // Prevent unchecking all - re-check the first one
+        podcastCheckboxes[0].checked = true;
+        podcastSelectedText.textContent = 'All podcasts selected';
+      } else if (selected.length === total) {
+        podcastSelectedText.textContent = 'All podcasts selected';
+      } else {
+        podcastSelectedText.textContent = selected.length + ' selected';
+      }
+    }
+
+    podcastCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const selected = Array.from(document.querySelectorAll('input[name="podcast"]:checked')).map(cb => cb.value);
+        
+        // If trying to uncheck the last one, prevent it
+        if (selected.length === 0) {
+          this.checked = true;
+          return;
+        }
+        
+        updatePodcastSelection();
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.podcast-dropdown')) {
+        podcastDropdownContent.classList.remove('open');
+        const arrow = podcastDropdownHeader.querySelector('span:last-child');
+        arrow.textContent = '▼';
+      }
+    });
+
+    const groupContainer = document.getElementById('or-groups-container');
+
+    function createChip(text, isExclude = false) {
+      const span = document.createElement('span');
+      span.className = 'chip' + (isExclude ? ' exclude' : '');
+      span.dataset.value = text;
+      span.innerHTML = '<span>' + text + '</span>' + 
+                       '<button class="remove-chip remove-btn">×</button>';
+      return span;
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        if (!val) return;
+        
+        if (e.target.classList.contains('add-word-input')) {
+          e.target.before(createChip(val));
+          e.target.value = '';
+        } else if (e.target.id === 'add-exclude-input') {
+          e.target.before(createChip(val, true));
+          e.target.value = '';
+        }
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('remove-chip')) e.target.parentElement.remove();
+      if (e.target.classList.contains('remove-group-btn')) {
+        if (document.querySelectorAll('.or-block').length > 1) e.target.closest('.or-block').remove();
+      }
+    });
+
+    document.getElementById('add-group-btn').addEventListener('click', function() {
+      const div = document.createElement('div');
+      div.className = 'or-block card';
+      div.innerHTML = `
+        <div class="group-header">
+          <span class="group-label">Match all in this group</span>
+          <button class="delete-group-text remove-group-btn">Delete Group</button>
+        </div>
+        <div class="chip-list">
+          <input type="text" class="ghost-input add-word-input" placeholder="+ Type and Enter...">
+        </div>`;
+      groupContainer.appendChild(div);
+    });
+
+    document.getElementById('submit-search').addEventListener('click', async function() {
+      const resultsList = document.getElementById('results');
+      resultsList.innerHTML = '<li>Searching...</li>';
+      
+      const params = new URLSearchParams();
+      document.querySelectorAll('.or-block').forEach(block => {
+        const words = Array.from(block.querySelectorAll('.chip:not(.exclude)')).map(c => c.dataset.value);
+        if (words.length > 0) params.append('orGroup', words.join('|'));
+      });
+
+      document.querySelectorAll('.exclude .chip, #exclude-container .chip').forEach(chip => {
+        params.append('exclude', chip.dataset.value);
+      });
+
+      // Add title filter
+      const titleFilter = document.getElementById('title-filter').value.trim();
+      if (titleFilter) params.append('title', titleFilter);
+
+      // Add podcast filters
+      const selectedPodcasts = Array.from(document.querySelectorAll('input[name="podcast"]:checked'));
+      selectedPodcasts.forEach(checkbox => {
+        params.append('podcast', checkbox.value);
+      });
+
+      const res = await fetch('/api/podcasts?' + params.toString());
+      const data = await res.json();
+      resultsList.innerHTML = data.ok ? 
+        data.results.map(r => `<li><a href="${r.url}" target="_blank">${r.title}</a></li>`).join('') : 
+        '<li>Error loading results.</li>';
+    });
+  </script>
+</BaseLayout>
+
+
