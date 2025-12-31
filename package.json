@@ -10,7 +10,7 @@
         "@astrojs/vercel": "^9.0.2",
         "@supabase/supabase-js": "^2.89.0",
         "astro": "^5.16.6",
-        "dotenv": "^17.2.3"
+        "postgres": "^3.4.7"
     },
     "devDependencies": {
         "@vercel/node": "^5.5.16"
