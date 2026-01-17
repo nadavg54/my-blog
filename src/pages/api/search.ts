@@ -1,5 +1,40 @@
 import { getSupabaseClient, getSQLClient, isUsingLocalPostgres } from '../../lib/db';
 
+// Company domain mappings
+export const COMPANY_DOMAINS: Record<string, string[]> = {
+  'amazon': ['amazon.com', 'aws.amazon.com'],
+  'cloudflare': ['cloudflare.com', 'blog.cloudflare.com'],
+  'cncf': ['cncf.io'],
+  'confluent': ['confluent.io', 'confluent.com'],
+  'datadoghq': ['datadoghq.com'],
+  'doordash': ['doordash.com', 'doordash.engineering'],
+  'dropbox': ['dropbox.com', 'dropbox.tech'],
+  'fb': ['fb.com', 'facebook.com', 'engineering.fb.com'],
+  'figma': ['figma.com'],
+  'github': ['github.com', 'github.blog'],
+  'google': ['google.com', 'googleblog.com', 'developers.googleblog.com'],
+  'netflix': ['netflix.com', 'netflixtechblog.com'],
+  'slack': ['slack.com'],
+  'uber': ['uber.com'],
+  'twitter': ['blog.x.com']
+};
+
+// Get company domains to filter based on selected companies
+function getCompanyDomainsToFilter(selectedCompanies: string[]): string[] {
+  if (selectedCompanies.length === 0) {
+    return [];
+  }
+
+  const domains: string[] = [];
+  selectedCompanies.forEach(companyKey => {
+    const companyDomains = COMPANY_DOMAINS[companyKey];
+    if (companyDomains) {
+      domains.push(...companyDomains);
+    }
+  });
+  return domains;
+}
+
 export async function GET(request: Request) {
   const urlObj = new URL(request.url);
   
@@ -84,19 +119,20 @@ export async function GET(request: Request) {
         }
       }
 
-      // 5. Apply Company Filters (OR condition - URL contains any selected company)
-      if (companies.length > 0) {
-        if (companies.length === 1) {
-          const companyCondition = sql`url ILIKE ${`%${companies[0]}%`}`;
+      // 5. Apply Company Filters (OR condition - URL contains any selected company domain)
+      const companyDomains = getCompanyDomainsToFilter(companies);
+      if (companyDomains.length > 0) {
+        if (companyDomains.length === 1) {
+          const companyCondition = sql`url ILIKE ${`%${companyDomains[0]}%`}`;
           if (query) {
             query = sql`${query} AND ${companyCondition}`;
           } else {
             query = sql`SELECT title, url FROM article WHERE ${companyCondition}`;
           }
         } else {
-          let companyQuery = sql`url ILIKE ${`%${companies[0]}%`}`;
-          for (let i = 1; i < companies.length; i++) {
-            companyQuery = sql`${companyQuery} OR url ILIKE ${`%${companies[i]}%`}`;
+          let companyQuery = sql`url ILIKE ${`%${companyDomains[0]}%`}`;
+          for (let i = 1; i < companyDomains.length; i++) {
+            companyQuery = sql`${companyQuery} OR url ILIKE ${`%${companyDomains[i]}%`}`;
           }
           if (query) {
             query = sql`${query} AND (${companyQuery})`;
@@ -158,9 +194,10 @@ export async function GET(request: Request) {
       query = query.ilike('url', `%${urlFilter}%`);
     }
 
-    // 5. Apply Company Filters (OR condition - URL contains any selected company)
-    if (companies.length > 0) {
-      const companyFilters = companies.map(company => `url.ilike.*${company}*`).join(',');
+    // 5. Apply Company Filters (OR condition - URL contains any selected company domain)
+    const companyDomains = getCompanyDomainsToFilter(companies);
+    if (companyDomains.length > 0) {
+      const companyFilters = companyDomains.map(domain => `url.ilike.*${domain}*`).join(',');
       query = query.or(companyFilters);
     }
 
